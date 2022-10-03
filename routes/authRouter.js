@@ -90,17 +90,17 @@ authRouter.get('/logout', cors.corsWithOptions, (req, res) => {
   }
 });
 
-authRouter.post('/signup', (req, res) => {
-  db.Admin.create({
-    email: req.body.email,
-    password: bcrypt.hashSync(req.body.password, 8)
-  })
-    .then((admin) => {
-      res.json(admin);
-    })
-    .catch((err) => {
-      res.json(err);
-    });
-});
+// authRouter.post('/signup', (req, res) => {
+//   db.Admin.create({
+//     email: req.body.email,
+//     password: bcrypt.hashSync(req.body.password, 8)
+//   })
+//     .then((admin) => {
+//       res.json(admin);
+//     })
+//     .catch((err) => {
+//       res.json(err);
+//     });
+// });
 
 module.exports = authRouter;

@@ -45,6 +45,7 @@ reservationRouter.route('/')
             var token = randtoken.generate(32);
             var requestBody = req.body;
             requestBody["confirmationCode"] = token;
+            
             db.Reservation.create(req.body)
                 .then((reservation) => {
                     sendResPendingMailClient(reservation.email)
