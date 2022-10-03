@@ -60,7 +60,6 @@ reservationRouter.route('/')
                                 res.status(500).send({ error: 'Error' });
                             }
                         }, (err) => next(err));
-
                     console.log('Reservation Created ', reservation);
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'application/json');
@@ -85,9 +84,9 @@ reservationRouter.route('/')
 reservationRouter.route('/timeslotsinfo')
     .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
     .get(cors.cors, (req, res, next) => {
-        db.sequelize.query('SET @maxPersonenPerReservatie = (SELECT settingValue from Settings where settingName = "maxPeoplePerReservation");')
+        db.sequelize.query('SET @maxPersonenPerTimeslot = (SELECT settingValue from Settings where settingName = "maxPeoplePerTimeslot");')
             .then((response) => {
-                db.sequelize.query('select reservedDateTime, @maxPersonenPerReservatie as maxPersonenReservatie, sum(nPeople) as aantalBezet, @maxPersonenPerReservatie-sum(nPeople) as aantalPlaatsenVrijTijdsSlot from Reservations group by reservedDateTime;',
+                db.sequelize.query('select reservedDateTime, @maxPersonenPerTimeslot as maxPersonenPerTimeslot, sum(nPeople) as aantalBezet, @maxPersonenPerTimeslot-sum(nPeople) as aantalPlaatsenVrijTijdsSlot from Reservations where status in ("pending","approved") group by reservedDateTime;',
                     { type: db.sequelize.QueryTypes.SELECT })
                     .then((reservationsTimeSlotsInfo) => {
                         res.statusCode = 200;
@@ -114,9 +113,9 @@ reservationRouter.route('/timeslotsinfo')
 reservationRouter.route('/dateinfo')
     .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
     .get(cors.cors, (req, res, next) => {
-        db.sequelize.query('SET @maxPersonenPerReservatie = (SELECT settingValue from Settings where settingName = "maxPeopleTotal");')
+        db.sequelize.query('SET @maxPersonenTotaal = (SELECT settingValue from Settings where settingName = "maxPeopleTotal");')
             .then(() => {
-                db.sequelize.query('select DATE(reservedDateTime) as reservedDate, @maxPersonenPerReservatie as maxPersonenReservatie, sum(nPeople) as aantalBezet, @maxPersonenPerReservatie-sum(nPeople) as aantalPlaatsenVrijDatum, mealType from Reservations group by DAY(reservedDateTime), mealType;',
+                db.sequelize.query('select DATE(reservedDateTime) as reservedDate, @maxPersonenTotaal as maxPersonenTotaal, sum(nPeople) as aantalBezet, @maxPersonenTotaal-sum(nPeople) as aantalPlaatsenVrijDatum, mealType from Reservations where status in ("pending","approved") group by DAY(reservedDateTime), mealType;',
                     { type: db.sequelize.QueryTypes.SELECT })
                     .then((reservationDateInfo) => {
                         res.statusCode = 200;
