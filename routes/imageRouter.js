@@ -23,7 +23,7 @@ const imageFileFilter = (req, file, cb) => {
     cb(null, true);
 };
 
-const upload = multer({ storage: storage, limits: { fileSize: 1 * 1024 * 1024 }, fileFilter: imageFileFilter}).single('image');
+const upload = multer({ storage: storage, limits: { fileSize: 1 * 1024 * 1024 * 25 }, fileFilter: imageFileFilter}).single('image');
 
 imageRouter.use(bodyParser.json());
 
@@ -41,6 +41,8 @@ imageRouter.route('/')
 .post(cors.corsWithOptions, authenticate.verifyToken, upload, (req, res, next) => {
     req.body.src = "images/" + req.file.filename;
     req.body.fileName = req.file.filename;
+    console.log(req.body.src);
+    console.log(req.body.fileName);
     db.Image.create(req.body)
     .then((image) => {
         console.log('Image Created ', image);
