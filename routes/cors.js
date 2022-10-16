@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 //'http://localhost:3000', 
-const whitelist = ['https://restaurantlots.be', 'http://restaurantlots.be', 'https://www.restaurantlots.be', 'http://www.restaurantlots.be'];
+const whitelist = ['https://restaurantlots.be','http://localhost:3000', 'http://restaurantlots.be', 'https://www.restaurantlots.be', 'http://www.restaurantlots.be'];
 var corsOptionsDelegate = (req, callback) => {
     var corsOptions;
     console.log(req.header('Origin'));
