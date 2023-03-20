@@ -8,7 +8,7 @@ const mysql = require('mysql');
 const db = require('./models');
 const compression = require('compression');
 const helmet = require('helmet');
-const PORT = process.env.port || 8080;
+const PORT = 5000;
 
 const indexRouter = require('./routes/index');
 const authRouter = require('./routes/authRouter');
@@ -24,11 +24,11 @@ db.sequelize.sync({ force: false })
   .then(() => {
     console.log("Connected correctly to server");
   })
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`App listening on PORT ${PORT}`);
-    });
-  });
+  // .then(() => {
+    // app.listen(PORT, () => {
+      // console.log(`App listening on PORT ${PORT}`);
+    // });
+  // });
 
 var app = express();
 app.use(helmet());
