@@ -8,7 +8,7 @@ const mysql = require('mysql');
 const db = require('./models');
 const compression = require('compression');
 const helmet = require('helmet');
-const PORT = 8080;
+const PORT = 8081;
 
 const indexRouter = require('./routes/index');
 const authRouter = require('./routes/authRouter');
