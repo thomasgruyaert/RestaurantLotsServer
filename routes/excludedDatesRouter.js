@@ -22,7 +22,6 @@ excludedDatesRouter.route('/')
     .catch((err) => next(err));
 })
 .post(cors.corsWithOptions, authenticate.verifyToken, (req, res, next) => {
-    console.log(req.body);
     db.ExcludedDates.create(req.body)
     .then((excludedDate) => {
         console.log('Excluded date Created ', excludedDate);
@@ -67,7 +66,7 @@ excludedDatesRouter.route('/:excludedDateId')
     res.end('PUT operation not supported on /excludeddates/'+ req.params.excludedDateId);
 })
 .delete(cors.corsWithOptions, authenticate.verifyToken, (req, res, next) => {
-    const excludedDateId = parseInt(excludedDateId, 10);
+    const excludedDateId = parseInt(req.params.excludedDateId, 10);
     db.ExcludedDates.destroy({
         where: {id: excludedDateId}
     })

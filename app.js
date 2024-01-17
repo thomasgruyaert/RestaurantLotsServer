@@ -19,7 +19,6 @@ const settingsRouter = require('./routes/settingsRouter');
 const tempNewsRouter = require('./routes/tempNewsRouter');
 const excludedDatesRouter = require('./routes/excludedDatesRouter');
 
-
 db.sequelize.sync({ force: false })
   .then(() => {
     console.log("Connected correctly to server");
