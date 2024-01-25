@@ -36,13 +36,8 @@ settingsRouter.route('/')
         res.end('PUT operation not supported on /settings');
     })
     .delete(cors.corsWithOptions, authenticate.verifyToken, (req, res, next) => {
-        db.Settings.remove({})
-            .then((resp) => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(resp);
-            }, (err) => next(err))
-            .catch((err) => next(err));
+        res.statusCode = 403;
+        res.end('DELETE operation not supported on /settings');
     });
 
 settingsRouter.route('/:settingId')

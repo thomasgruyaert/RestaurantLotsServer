@@ -104,5 +104,28 @@ async function sendResPendingMailLots(reservation) {
         .catch(err => { console.log(err); return 'Error'; });
 }
 
+async function sendVoucherMail(voucher) {
+    var boughtDate = new Date(voucher.boughtDate);
+    var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'};
+    var boughtDateString = boughtDate.toLocaleDateString('nl-BE', options);
+    mailOptions = {
+        from: `Restaurant Lots <${process.env.SENDER_EMAIL}>`,
+        to: `${voucher.emailRecipient}`,
+        subject: `Restaurant Lots - Jouw geschenkbon`,
+        template: 'voucherMail',
+        context: {
+            voucherNameReceivers: voucher.nameReceivers,
+            voucherNameGifters: voucher.nameGifters,
+            voucherBoughtDate: boughtDateString,
+            voucherAmount : voucher.voucherAmount,
+            voucherCustomMessage: voucher.customMessage
+        }
+    }
+
+    return await transporter.sendMail(mailOptions)
+        .then(success => 'Success')
+        .catch(err => { console.log(err); return 'Error'; });
+}
+
 /** Export */
-module.exports = { sendResApprovalMailClient, sendResRefusalMailClient, sendResPendingMailClient, sendResPendingMailLots }
+module.exports = { sendResApprovalMailClient, sendResRefusalMailClient, sendResPendingMailClient, sendResPendingMailLots, sendVoucherMail }

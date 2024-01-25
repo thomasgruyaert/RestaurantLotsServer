@@ -10,6 +10,8 @@ const randtoken = require('rand-token');
 
 reservationRouter.use(bodyParser.json());
 
+const maxPeoplePerReservation = 6;
+
 reservationRouter.route('/')
     .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
     .get(cors.cors, authenticate.verifyToken, (req, res, next) => {
@@ -35,6 +37,7 @@ reservationRouter.route('/')
                     throw new Error("Er is reeds een reservatie aangevraagd op het huidige emailadres");
                 }
             }, (err) => next(err))}),
+        body('nPeople').isInt({min: 0, max: maxPeoplePerReservation}).withMessage("Gelieve een geldig aantal personen op te geven"),
         body('mealType').isIn(['lunch', 'dinner']).withMessage("Gelieve een geldig type op te geven"),
         body('status').isIn(['pending', 'approved']).withMessage('Gelieve een geldige status mee te geven'),
         (req, res, next) => {
@@ -72,13 +75,8 @@ reservationRouter.route('/')
         res.end('PUT operation not supported on /reservations');
     })
     .delete(cors.corsWithOptions, authenticate.verifyToken, (req, res, next) => {
-        db.Reservation.destroy({})
-            .then((resp) => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(resp);
-            }, (err) => next(err))
-            .catch((err) => next(err));
+        res.statusCode = 403;
+        res.end('DELETE operation not supported on /reservations');
     });
 
 reservationRouter.route('/timeslotsinfo')
