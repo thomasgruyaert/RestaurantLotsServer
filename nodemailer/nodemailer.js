@@ -76,6 +76,14 @@ async function sendResPendingMailClient(requestorEmail) {
         .catch(err => { console.log(err); return 'Error'; });
 }
 
+async function sendVoucherMailClient(requestorEmail) {
+    //To Implement
+}
+
+async function sendVoucherMailLots() {
+    //To Implement
+}
+
 
 async function sendResPendingMailLots(reservation) {
     var reservationDateTime = new Date(reservation.reservedDateTime);
