@@ -18,6 +18,8 @@ const businessHoursRouter = require('./routes/businessHoursRouter');
 const settingsRouter = require('./routes/settingsRouter');
 const tempNewsRouter = require('./routes/tempNewsRouter');
 const excludedDatesRouter = require('./routes/excludedDatesRouter');
+const voucherRouter = require('./routes/voucherRouter');
+
 
 db.sequelize.sync({ force: false })
   .then(() => {
@@ -60,6 +62,7 @@ app.use('/api/businesshours', businessHoursRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/tempnews', tempNewsRouter);
 app.use('/api/excludeddates', excludedDatesRouter);
+// app.use('/api/vouchers', voucherRouter);
 app.use(express.static(path.join(__dirname, 'public')));
 
 // catch 404 and forward to error handler
