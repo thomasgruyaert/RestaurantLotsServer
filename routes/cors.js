@@ -5,7 +5,6 @@ const app = express();
 const whitelist = ['https://restaurantlots.be','http://localhost:3000', 'http://restaurantlots.be', 'https://www.restaurantlots.be', 'http://www.restaurantlots.be'];
 var corsOptionsDelegate = (req, callback) => {
     var corsOptions;
-    console.log(req.header('Origin'));
     if(whitelist.indexOf(req.header('Origin')) !== -1) {
         corsOptions = { origin: true };
     }
