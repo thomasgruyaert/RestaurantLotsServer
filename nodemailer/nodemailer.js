@@ -14,11 +14,26 @@ const path = require('path');
 //     }
 // });
 
-const transporter = nodemailer.createTransport(
-    MailtrapTransport({
-      token: process.env.MAILTRAP_TOKEN,
-    })
-);
+// const transporter = nodemailer.createTransport(
+//     MailtrapTransport({
+//       token: process.env.MAILTRAP_TOKEN,
+//       debug: true, // show debug output
+//       logger: true // log information in console
+//     },
+//         ),
+//
+// );
+
+const transporter = nodemailer.createTransport({
+  host: "live.smtp.mailtrap.io",
+  port: 587,
+  auth: {
+    user: "api",
+    pass: process.env.MAILTRAP_TOKEN
+  },
+  debug: true, // show debug output
+  logger: true // log information in console
+});
 
 const handlebarOptions = {
   viewEngine: {
