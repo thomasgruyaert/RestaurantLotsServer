@@ -64,13 +64,13 @@ async function sendResApprovalMailClient(requestorEmail, reservation) {
     subject: `Restaurant Lots - Bevestiging Reservatie #${reservation.id}`,
     template: 'reservationConfirmationClient',
     context: {
-      srcLotsBanner: `${process.env.firebaseUrl}${encodeURIComponent(
+      srcLotsBanner: `${process.env.FIREBASE_URL}${encodeURIComponent(
           'mail/reservation/gallery (22).jpeg')}?alt=media`,
-      srcLotsLogo: `${process.env.firebaseUrl}${encodeURIComponent(
+      srcLotsLogo: `${process.env.FIREBASE_URL}${encodeURIComponent(
           'mail/reservation/Transparent-1.png')}?alt=media`,
-      srcLotsLocatie: `${process.env.firebaseUrl}${encodeURIComponent(
+      srcLotsLocatie: `${process.env.FIREBASE_URL}${encodeURIComponent(
           'mail/reservation/Group-4.png')}?alt=media`,
-      srcResApproved: `${process.env.firebaseUrl}${encodeURIComponent(
+      srcResApproved: `${process.env.FIREBASE_URL}${encodeURIComponent(
           'mail/reservation/approved.png')}?alt=media`,
       reservationFullName: reservation.firstName + " " + reservation.lastName,
       reservationId: reservation.id,
@@ -100,13 +100,13 @@ async function sendResRefusalMailClient(requestorEmail, refusalReason) {
     subject: `Restaurant Lots - Reservatie geweigerd`,
     template: 'reservationRefusalClient',
     context: {
-      srcLotsBanner: `${process.env.firebaseUrl}${encodeURIComponent(
+      srcLotsBanner: `${process.env.FIREBASE_URL}${encodeURIComponent(
           'mail/reservation/gallery (22).jpeg')}?alt=media`,
-      srcLotsLogo: `${process.env.firebaseUrl}${encodeURIComponent(
+      srcLotsLogo: `${process.env.FIREBASE_URL}${encodeURIComponent(
           'mail/reservation/Transparent-1.png')}?alt=media`,
-      srcLotsLocatie: `${process.env.firebaseUrl}${encodeURIComponent(
+      srcLotsLocatie: `${process.env.FIREBASE_URL}${encodeURIComponent(
           'mail/reservation/Group-4.png')}?alt=media`,
-      srcResDenied: `${process.env.firebaseUrl}${encodeURIComponent(
+      srcResDenied: `${process.env.FIREBASE_URL}${encodeURIComponent(
           'mail/reservation/denied.png')}?alt=media`,
       refusalReason: refusalReason
     }
@@ -127,13 +127,13 @@ async function sendResPendingMailClient(requestorEmail) {
     subject: `Restaurant Lots - Reservatie verstuurd`,
     template: 'reservationPendingClient',
     context: {
-      srcLotsBanner: `${process.env.firebaseUrl}${encodeURIComponent(
+      srcLotsBanner: `${process.env.FIREBASE_URL}${encodeURIComponent(
           'mail/reservation/gallery (22).jpeg')}?alt=media`,
-      srcLotsLogo: `${process.env.firebaseUrl}${encodeURIComponent(
+      srcLotsLogo: `${process.env.FIREBASE_URL}${encodeURIComponent(
           'mail/reservation/Transparent-1.png')}?alt=media`,
-      srcLotsLocatie: `${process.env.firebaseUrl}${encodeURIComponent(
+      srcLotsLocatie: `${process.env.FIREBASE_URL}${encodeURIComponent(
           'mail/reservation/Group-4.png')}?alt=media`,
-      srcResPending: `${process.env.firebaseUrl}${encodeURIComponent(
+      srcResPending: `${process.env.FIREBASE_URL}${encodeURIComponent(
           'mail/reservation/pending.png')}?alt=media`,
     }
   }
@@ -166,13 +166,13 @@ async function sendResPendingMailLots(reservation) {
     subject: `Online Reservatie - Aanvraag Reservatie #${reservation.id}`,
     template: 'reservationPendingLots',
     context: {
-      srcResPending: `${process.env.firebaseUrl}${encodeURIComponent(
+      srcResPending: `${process.env.FIREBASE_URL}${encodeURIComponent(
           'mail/reservation/pending.png')}?alt=media`,
-      srcLotsBanner: `${process.env.firebaseUrl}${encodeURIComponent(
+      srcLotsBanner: `${process.env.FIREBASE_URL}${encodeURIComponent(
           'mail/reservation/gallery (22).jpeg')}?alt=media`,
-      srcLotsLogo: `${process.env.firebaseUrl}${encodeURIComponent(
+      srcLotsLogo: `${process.env.FIREBASE_URL}${encodeURIComponent(
           'mail/reservation/Transparent-1.png')}?alt=media`,
-      srcLotsLocatie: `${process.env.firebaseUrl}${encodeURIComponent(
+      srcLotsLocatie: `${process.env.FIREBASE_URL}${encodeURIComponent(
           'mail/reservation/Group-4.png')}?alt=media`,
       reservationFullName: reservation.firstName + " " + reservation.lastName,
       reservationConfirmationCode: reservation.confirmationCode,

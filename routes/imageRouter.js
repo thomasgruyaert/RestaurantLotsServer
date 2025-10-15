@@ -33,7 +33,7 @@ imageRouter.use(bodyParser.json());
 const serviceAccount = require("../serviceAccountKey.json");
 
 const firebaseConfig = {
-    storageBucket: process.env.storageBucket,
+    storageBucket: 'lots-images.appspot.com',
     credential: firebase.credential.cert(serviceAccount)
 };
 
@@ -45,7 +45,7 @@ imageRouter.route('/')
     db.Image.findAll(req.query)
     .then((images) => {
         images.forEach(image => {
-            image.src = `${process.env.firebaseUrl}${encodeURIComponent(image.src)}?alt=media`;
+            image.src = `${process.env.FIREBASE_URL}${encodeURIComponent(image.src)}?alt=media`;
         })
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -75,7 +75,7 @@ imageRouter.route('/')
             db.Image.create(req.body)
             .then((image) => {
                 console.log('Image Created ', image);
-                image.src = `${process.env.firebaseUrl}${encodeURIComponent(image.src)}?alt=media`;
+                image.src = `${process.env.FIREBASE_URL}${encodeURIComponent(image.src)}?alt=media`;
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
                 res.json(image);
@@ -105,7 +105,7 @@ imageRouter.route('/:imageId')
     const imageId = parseInt(req.params.imageId, 10);
     db.Image.findByPk(imageId)
     .then((image) => {
-        image.src = `${process.env.firebaseUrl}${encodeURIComponent(image.src)}?alt=media`;
+        image.src = `${process.env.FIREBASE_URL}${encodeURIComponent(image.src)}?alt=media`;
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
         res.json(image);
