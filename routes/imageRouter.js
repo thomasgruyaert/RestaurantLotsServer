@@ -30,10 +30,22 @@ const upload = multer({ storage: storage, limits: { fileSize: 1000000 }, fileFil
 
 imageRouter.use(bodyParser.json());
 
-const serviceAccount = require("../serviceAccountKey.json");
+const serviceAccount = {
+  type: process.env.FIREBASE_TYPE,
+  project_id: process.env.FIREBASE_PROJECT_ID,
+  private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+  private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  client_email: process.env.FIREBASE_CLIENT_EMAIL,
+  client_id: process.env.FIREBASE_CLIENT_ID,
+  auth_uri: process.env.FIREBASE_AUTH_URI,
+  token_uri: process.env.FIREBASE_TOKEN_URI,
+  auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
+  client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
+  universe_domain: process.env.FIREBASE_UNIVERSE_DOMAIN
+};
 
 const firebaseConfig = {
-    storageBucket: process.env.storageBucket,
+    storageBucket: 'lots-images.appspot.com',
     credential: firebase.credential.cert(serviceAccount)
 };
 
@@ -45,7 +57,7 @@ imageRouter.route('/')
     db.Image.findAll(req.query)
     .then((images) => {
         images.forEach(image => {
-            image.src = `${process.env.firebaseUrl}${encodeURIComponent(image.src)}?alt=media`;
+            image.src = `${process.env.FIREBASE_URL}${encodeURIComponent(image.src)}?alt=media`;
         })
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -75,7 +87,7 @@ imageRouter.route('/')
             db.Image.create(req.body)
             .then((image) => {
                 console.log('Image Created ', image);
-                image.src = `${process.env.firebaseUrl}${encodeURIComponent(image.src)}?alt=media`;
+                image.src = `${process.env.FIREBASE_URL}${encodeURIComponent(image.src)}?alt=media`;
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
                 res.json(image);
@@ -100,7 +112,7 @@ imageRouter.route('/:imageId')
     const imageId = parseInt(req.params.imageId, 10);
     db.Image.findByPk(imageId)
     .then((image) => {
-        image.src = `${process.env.firebaseUrl}${encodeURIComponent(image.src)}?alt=media`;
+        image.src = `${process.env.FIREBASE_URL}${encodeURIComponent(image.src)}?alt=media`;
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
         res.json(image);
