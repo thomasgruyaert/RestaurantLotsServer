@@ -6,7 +6,97 @@ const voucherRouter = express.Router();
 const authenticate = require('../authenticate');
 const { body, validationResult } = require('express-validator');
 const { sendVoucherMail } = require('../nodemailer/nodemailer');
+const fontkit = require('@pdf-lib/fontkit');
 const randtoken = require('rand-token');
+
+const fs = require('fs');
+const { PDFDocument, rgb } = require('pdf-lib');
+const path = require('path');
+
+async function generateVoucherPdf(voucher) {
+  const pdfPath = path.join(__dirname, '../pdf/voucher-lots-template.pdf');
+  const existingPdfBytes = fs.readFileSync(pdfPath);
+  const pdfDoc = await PDFDocument.load(existingPdfBytes);
+  pdfDoc.registerFontkit(fontkit);
+  const form = pdfDoc.getForm();
+
+  const frScriptfontPath = path.join(__dirname, '../fonts/FRSCRIPT.ttf');
+  const frScriptFontBytes = fs.readFileSync(frScriptfontPath);
+  const frScriptFont = await pdfDoc.embedFont(frScriptFontBytes);
+  const helveticaFontPath = path.join(__dirname, '../fonts/BarlowCondensed-SemiBold.otf');
+  const helveticaFontBytes = fs.readFileSync(helveticaFontPath);
+  const helveticaFont = await pdfDoc.embedFont(helveticaFontBytes);
+  const page = pdfDoc.getPages()[0];
+  const { width, height } = page.getSize();
+
+  var options = {
+    year: "numeric",
+    month: "2-digit",
+    day: "numeric",
+  };
+  var validUntilDateString = voucher.validUntil.toLocaleDateString('nl-BE', options);
+
+  const identifierText = `ID: #${voucher.id}`;
+  const textWidthHelvetica = helveticaFont.widthOfTextAtSize(identifierText, 16);
+  const textWidthHelveticaValidUntil = helveticaFont.widthOfTextAtSize(validUntilDateString, 20);
+  const textWidthHelveticaVoucherAmount = helveticaFont.widthOfTextAtSize(`${voucher.voucherAmount}`, 20);
+  const textWidthFrScript = frScriptFont.widthOfTextAtSize(voucher.customMessage, 30);
+  const textWidthSmakelijk = frScriptFont.widthOfTextAtSize('Smakelijk!', 40);
+
+  page.drawText(`Aan: ${voucher.nameReceivers}`, { x: 60, y: 210, font: helveticaFont, size: 20 });
+  page.drawText(`Geschonken door: ${voucher.nameGifters}`, { x: 60, y: 180, font: helveticaFont, size: 20 });
+  page.drawText(`Bedrag: € ${voucher.voucherAmount}`, { x: width - textWidthHelveticaVoucherAmount - 160, y: 210, font: helveticaFont, size: 20 });
+  page.drawText(`Geldig tot en met: ${validUntilDateString}`, { x: width - textWidthHelveticaValidUntil - 180, y: 180, font: helveticaFont, size: 20 });
+  page.drawText(voucher.customMessage, { x: (page.getWidth() / 2) - (textWidthFrScript / 2),
+    y: 100, font: frScriptFont, size: 30});
+  page.drawText('Smakelijk!', { x: (page.getWidth() / 2) - (textWidthSmakelijk / 2),
+    y: 60, font: frScriptFont, size: 40})
+
+  //Aan
+  page.drawLine({
+    start: { x:60, y: 205},
+    end: {x: 90, y: 205},
+    thickness: 2,
+    color: rgb(0,0,0),
+    opacity: 1
+  });
+  //Geschonken door
+  page.drawLine({
+    start: { x:60, y: 175},
+    end: {x: 185, y: 175},
+    thickness: 2,
+    color: rgb(0,0,0),
+    opacity: 1
+  });
+  //Bedrag
+  page.drawLine({
+    start: { x:width - textWidthHelveticaVoucherAmount - 160, y: 205},
+    end: {x: width - textWidthHelveticaVoucherAmount - 160+55, y: 205},
+    thickness: 2,
+    color: rgb(0,0,0),
+    opacity: 1
+  });
+  //Geldig tot en met
+  page.drawLine({
+    start: { x:width - textWidthHelveticaValidUntil - 180, y: 175},
+    end: {x: width - textWidthHelveticaValidUntil - 180+125, y: 175},
+    thickness: 2,
+    color: rgb(0,0,0),
+    opacity: 1
+  });
+
+  page.drawText(identifierText, {
+    x: width - textWidthHelvetica - 60,
+    y: height - 70,
+    font: helveticaFont,
+    size: 16,
+    color: rgb(0, 0, 0),
+  });
+
+  form.flatten();
+
+  return await pdfDoc.save();
+}
 
 
 voucherRouter.use(bodyParser.json());
@@ -16,7 +106,7 @@ const maxVoucherAmount = 200;
 const stripe = require('stripe')(process.env.STRIPE_KEY);
 const BASE_URL = process.env.CLIENT_URL+"/vouchers";
 
-// voucherRouter.route('/create-payment-intent')   
+// voucherRouter.route('/create-payment-intent')
 // .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
 // .post(cors.corsWithOptions,
 //   body('nameGifters').isLength({ min: 2 }).withMessage("Gelieve een geldige achternaam op te geven"),
@@ -38,7 +128,7 @@ const BASE_URL = process.env.CLIENT_URL+"/vouchers";
 //           voucherAmount: req.body.voucherAmount
 //         },
 //       });
-    
+
 //       res.send({
 //         clientSecret: paymentIntent.client_secret
 //       });
@@ -132,11 +222,46 @@ voucherRouter.route('/stripe_webhook')
     }
   });
 
+voucherRouter.route('/:voucherId/generate')
+  .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+  .get(cors.cors, authenticate.verifyToken, (req, res, next) => {
+    res.statusCode = 403;
+    res.end('GET operation not supported on /vouchers/generate');
+  })
+  .post(cors.corsWithOptions, authenticate.verifyToken, (req, res, next) => {
+    const voucherId = parseInt(req.params.voucherId, 10);
+
+    db.Voucher.findByPk(voucherId)
+    .then((voucher) => {
+      generateVoucherPdf(voucher).then((pdfBytes) => {
+        const outputPath = path.join(__dirname, `../output/${voucher.id}_voucher.pdf`);
+
+        fs.writeFileSync(outputPath, pdfBytes);
+
+        res.status(200).download(outputPath, `${voucher.id}_voucher.pdf`, (err) => {
+          if (err) {
+            next(err);
+          } else {
+            // Optioneel: bestand opruimen na download
+            fs.unlink(outputPath, () => {});
+          }
+        });
+      }, (err) => next(err));
+    }, (err) => next(err));
+  })
+  .put(cors.corsWithOptions, authenticate.verifyToken, (req, res, next) => {
+    res.statusCode = 403;
+    res.end('PUT operation not supported on /vouchers/generate');
+  })
+  .delete(cors.corsWithOptions, authenticate.verifyToken, (req, res, next) => {
+    res.statusCode = 403;
+    res.end('DELETE operation not supported on /vouchers/generate');
+  });
+
 
 voucherRouter.route('/')
     .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
     .get(cors.cors, authenticate.verifyToken, (req, res, next) => {
-      console.log("let's go vouchers");
         db.Voucher.findAll(req.query)
             .then((vouchers) => {
                 res.statusCode = 200;
