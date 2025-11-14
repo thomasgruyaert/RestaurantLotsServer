@@ -42,7 +42,7 @@ server.on('listening', onListening);
   // requestCert: false,
 // };
 
-process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
+// process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
 
 // var secureServer = https.createServer(options,app);
 

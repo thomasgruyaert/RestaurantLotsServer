@@ -14,8 +14,6 @@ var bcrypt = require("bcryptjs");
 
 authRouter.use(bodyParser.json());
 
-authRouter.options('*', cors.corsWithOptions, (req, res) => { res.sendStatus(200); } );
-
 authRouter.route('/')
 .options(cors.corsWithOptions, authenticate.verifyToken, (req, res) => { res.sendStatus(200); })
 .get(cors.corsWithOptions,  (req,res,next) => {
