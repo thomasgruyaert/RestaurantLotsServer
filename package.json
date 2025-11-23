@@ -10,6 +10,7 @@
   "author": "Thomas Gruyaert",
   "license": "ISC",
   "dependencies": {
+    "@mollie/api-client": "4.3.3",
     "@pdf-lib/fontkit": "1.1.1",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.2",

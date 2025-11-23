@@ -11,7 +11,7 @@ module.exports = function (sequelize, DataTypes) {
             allowNull: false
         },
         type: {
-            type: DataTypes.ENUM("Homepagina", "Reservatiepagina","Galerijpagina","Menupagina"),
+            type: DataTypes.ENUM("Homepagina", "Reservatiepagina","Galerijpagina","Menupagina", "Voucherpagina"),
             allowNull: false
         },
         expirationDate: {

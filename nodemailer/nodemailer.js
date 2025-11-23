@@ -197,7 +197,7 @@ async function sendResPendingMailLots(reservation) {
   });
 }
 
-async function sendVoucherMail(voucher) {
+async function sendVoucherMail(voucher, pdfPath) {
     var boughtDate = new Date(voucher.boughtDate);
     var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'};
     var boughtDateString = boughtDate.toLocaleDateString('nl-BE', options);
@@ -212,7 +212,14 @@ async function sendVoucherMail(voucher) {
             voucherBoughtDate: boughtDateString,
             voucherAmount : voucher.voucherAmount,
             voucherCustomMessage: voucher.customMessage
-        }
+        },
+        attachments: [
+            {
+                filename: `${voucher.id}_voucher.pdf`,
+                path: pdfPath,
+                contentType: 'application/pdf'
+            }
+        ]
     }
 
     return await transporter.sendMail(mailOptions)
@@ -221,4 +228,4 @@ async function sendVoucherMail(voucher) {
 }
 
 /** Export */
-module.exports = { sendResApprovalMailClient, sendResRefusalMailClient, sendResPendingMailClient, sendResPendingMailLots }
+module.exports = { sendResApprovalMailClient, sendResRefusalMailClient, sendResPendingMailClient, sendResPendingMailLots, sendVoucherMail }

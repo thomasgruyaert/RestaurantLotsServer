@@ -22,17 +22,18 @@ module.exports = function (sequelize, DataTypes) {
       type: DataTypes.DATE,
       allowNull: false
     },
-    validUntil: {
-      type: DataTypes.DATE,
-      allowNull: false
-    },
     voucherAmount: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false
     },
     customMessage: {
       type: DataTypes.STRING,
       allowNull: true
+    },
+    paymentStatus: {
+      type: DataTypes.ENUM("waiting", "open", "pending", "authorized", "paid", "canceled", "expired", "failed"),
+      allowNull: false,
+      defaultValue: "waiting"
     }
   });
   return Voucher;
