@@ -73,10 +73,11 @@ async function generateVoucherPdf(voucher) {
   pdfDoc.registerFontkit(fontkit);
   const form = pdfDoc.getForm();
 
-  const frScriptFontPath = path.resolve(projectRoot, 'fonts', 'FRSCRIPT.ttf');
+  const frScriptFontPath = path.join(__dirname, '../fonts/FRSCRIPT.ttf');
   const frScriptFontBytes = fs.readFileSync(frScriptFontPath);
   const frScriptFont = await pdfDoc.embedFont(frScriptFontBytes);
-  const helveticaFontPath = path.resolve(projectRoot, 'fonts', 'BarlowCondensed-SemiBold.otf');
+  const helveticaFontPath = path.join(__dirname,
+      '../fonts/BarlowCondensed-SemiBold.otf');
   const helveticaFontBytes = fs.readFileSync(helveticaFontPath);
   const helveticaFont = await pdfDoc.embedFont(helveticaFontBytes);
   const page = pdfDoc.getPages()[0];
@@ -259,6 +260,8 @@ voucherRouter.route('/')
 .get(cors.cors, authenticate.verifyToken, (req, res, next) => {
   db.Voucher.findAll(req.query)
   .then((vouchers) => {
+    console.log('Resolved path:', path.join(__dirname, '../fonts/FRSCRIPT.ttf'));
+    console.log('Exists?', fs.existsSync(path.join(__dirname, '../fonts/FRSCRIPT.ttf')));
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
     res.json(vouchers);
