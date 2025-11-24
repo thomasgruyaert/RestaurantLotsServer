@@ -8,7 +8,7 @@ const {body, validationResult} = require('express-validator');
 const {sendVoucherMail} = require('../nodemailer/nodemailer');
 const fontkit = require('@pdf-lib/fontkit');
 const randtoken = require('rand-token');
-const { createMollieClient } = require('@mollie/api-client');
+const {createMollieClient} = require('@mollie/api-client');
 
 const mollieClient = createMollieClient(
     {apiKey: process.env.MOLLIE_TEST_KEY});
@@ -31,7 +31,7 @@ async function createMolliePayment(voucher) {
     cancelUrl: `https://www.restaurantlots.be/vouchers/${voucher.id}/canceled`,
     // redirectUrl: `http://localhost:3000/vouchers/${voucher.id}/confirmation`,
     // cancelUrl: `http://localhost:3000/vouchers/${voucher.id}/canceled`,
-    shippingAddress: { email: voucher.emailRecipient },
+    shippingAddress: {email: voucher.emailRecipient},
     locale: 'nl_BE',
     webhookUrl: `https://api.restaurantlots.be/vouchers/${voucher.id}/payment-update`
   });
@@ -53,7 +53,8 @@ async function processPayment(voucherId, paymentId, next, res) {
 async function generateVoucherPdfAndSendMail(voucher, paymentId, next, res) {
   const pdfBytes = await generateVoucherPdf(voucher);
 
-  const outputPath = path.resolve(projectRoot, 'output', `${voucher.id}_voucher.pdf`);
+  const outputPath = path.resolve(projectRoot, 'output',
+      `${voucher.id}_voucher.pdf`);
 
   await fs.promises.writeFile(outputPath, pdfBytes);
 
@@ -73,11 +74,11 @@ async function generateVoucherPdf(voucher) {
   pdfDoc.registerFontkit(fontkit);
   const form = pdfDoc.getForm();
 
-  const frScriptFontPath = path.join(__dirname, '../fonts/FRSCRIPT.ttf');
+  const frScriptFontPath = path.resolve(process.cwd(), 'fonts/FRSCRIPT.TTF');
   const frScriptFontBytes = fs.readFileSync(frScriptFontPath);
   const frScriptFont = await pdfDoc.embedFont(frScriptFontBytes);
-  const helveticaFontPath = path.join(__dirname,
-      '../fonts/BarlowCondensed-SemiBold.otf');
+  const helveticaFontPath = path.resolve(process.cwd(),
+      'fonts/BarlowCondensed-SemiBold.otf');
   const helveticaFontBytes = fs.readFileSync(helveticaFontPath);
   const helveticaFont = await pdfDoc.embedFont(helveticaFontBytes);
   const page = pdfDoc.getPages()[0];
@@ -177,6 +178,13 @@ voucherRouter.use(bodyParser.json());
 const minVoucherAmount = 5;
 const maxVoucherAmount = 1000;
 
+console.log('VoucherRouter loaded!');
+console.log('Voucher route hit!');
+console.log('Resolved path:',
+    path.join(__dirname, '../fonts/FRSCRIPT.ttf'));
+console.log('Exists?',
+    fs.existsSync(path.join(__dirname, '../fonts/FRSCRIPT.ttf')));
+
 voucherRouter.route('/:voucherId/send-mail')
 .options(cors.corsWithOptions, (req, res) => {
   res.sendStatus(200);
@@ -191,7 +199,8 @@ voucherRouter.route('/:voucherId/send-mail')
   db.Voucher.findByPk(voucherId)
   .then((voucher) => {
     generateVoucherPdf(voucher).then((pdfBytes) => {
-      const outputPath = path.resolve(projectRoot, 'output', `${voucher.id}_voucher.pdf`);
+      const outputPath = path.resolve(projectRoot, 'output',
+          `${voucher.id}_voucher.pdf`);
 
       fs.writeFileSync(outputPath, pdfBytes);
       sendVoucherMail(voucher, outputPath).then((response) => {
@@ -227,7 +236,8 @@ voucherRouter.route('/:voucherId/generate')
   db.Voucher.findByPk(voucherId)
   .then((voucher) => {
     generateVoucherPdf(voucher).then((pdfBytes) => {
-      const outputPath = path.resolve(projectRoot, 'output', `${voucher.id}_voucher.pdf`);
+      const outputPath = path.resolve(projectRoot, 'output',
+          `${voucher.id}_voucher.pdf`);
 
       fs.writeFileSync(outputPath, pdfBytes);
 
@@ -260,8 +270,6 @@ voucherRouter.route('/')
 .get(cors.cors, authenticate.verifyToken, (req, res, next) => {
   db.Voucher.findAll(req.query)
   .then((vouchers) => {
-    console.log('Resolved path:', path.join(__dirname, '../fonts/FRSCRIPT.ttf'));
-    console.log('Exists?', fs.existsSync(path.join(__dirname, '../fonts/FRSCRIPT.ttf')));
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
     res.json(vouchers);
@@ -289,7 +297,7 @@ voucherRouter.route('/')
       db.Voucher.create(req.body)
       .then((voucher) => {
         createMolliePayment(voucher).then((payment) => {
-          return res.status(200).json({ checkoutUrl: payment.getCheckoutUrl() });
+          return res.status(200).json({checkoutUrl: payment.getCheckoutUrl()});
         })
       }, (err) => next(err))
       .catch((err) => next(err));
