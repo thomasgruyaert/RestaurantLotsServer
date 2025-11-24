@@ -17,6 +17,8 @@ const fs = require('fs');
 const {PDFDocument, rgb} = require('pdf-lib');
 const path = require('path');
 
+const projectRoot = process.cwd();
+
 async function createMolliePayment(voucher) {
   const payment = await mollieClient.payments.create({
     amount: {
@@ -51,8 +53,7 @@ async function processPayment(voucherId, paymentId, next, res) {
 async function generateVoucherPdfAndSendMail(voucher, paymentId, next, res) {
   const pdfBytes = await generateVoucherPdf(voucher);
 
-  const outputPath = path.join(__dirname,
-      `../output/${voucher.id}_voucher.pdf`);
+  const outputPath = path.resolve(projectRoot, 'output', `${voucher.id}_voucher.pdf`);
 
   await fs.promises.writeFile(outputPath, pdfBytes);
 
@@ -65,17 +66,17 @@ async function generateVoucherPdfAndSendMail(voucher, paymentId, next, res) {
 }
 
 async function generateVoucherPdf(voucher) {
-  const pdfPath = path.join(__dirname, '../pdf/voucher-lots-template.pdf');
+  console.log(projectRoot);
+  const pdfPath = path.resolve(projectRoot, 'pdf', 'voucher-lots-template.pdf');
   const existingPdfBytes = fs.readFileSync(pdfPath);
   const pdfDoc = await PDFDocument.load(existingPdfBytes);
   pdfDoc.registerFontkit(fontkit);
   const form = pdfDoc.getForm();
 
-  const frScriptfontPath = path.join(__dirname, '../fonts/FRSCRIPT.ttf');
-  const frScriptFontBytes = fs.readFileSync(frScriptfontPath);
+  const frScriptFontPath = path.resolve(projectRoot, 'fonts', 'FRSCRIPT.ttf');
+  const frScriptFontBytes = fs.readFileSync(frScriptFontPath);
   const frScriptFont = await pdfDoc.embedFont(frScriptFontBytes);
-  const helveticaFontPath = path.join(__dirname,
-      '../fonts/BarlowCondensed-SemiBold.otf');
+  const helveticaFontPath = path.resolve(projectRoot, 'fonts', 'BarlowCondensed-SemiBold.otf');
   const helveticaFontBytes = fs.readFileSync(helveticaFontPath);
   const helveticaFont = await pdfDoc.embedFont(helveticaFontBytes);
   const page = pdfDoc.getPages()[0];
@@ -86,7 +87,7 @@ async function generateVoucherPdf(voucher) {
     month: "2-digit",
     day: "numeric",
   };
-  var validUntilDateString = voucher.validUntil.toLocaleDateString('nl-BE',
+  var validUntilDateString = voucher.validUntilDate.toLocaleDateString('nl-BE',
       options);
 
   const identifierText = `ID: #${voucher.id}`;
@@ -189,8 +190,7 @@ voucherRouter.route('/:voucherId/send-mail')
   db.Voucher.findByPk(voucherId)
   .then((voucher) => {
     generateVoucherPdf(voucher).then((pdfBytes) => {
-      const outputPath = path.join(__dirname,
-          `../output/${voucher.id}_voucher.pdf`);
+      const outputPath = path.resolve(projectRoot, 'output', `${voucher.id}_voucher.pdf`);
 
       fs.writeFileSync(outputPath, pdfBytes);
       sendVoucherMail(voucher, outputPath).then((response) => {
@@ -226,8 +226,7 @@ voucherRouter.route('/:voucherId/generate')
   db.Voucher.findByPk(voucherId)
   .then((voucher) => {
     generateVoucherPdf(voucher).then((pdfBytes) => {
-      const outputPath = path.join(__dirname,
-          `../output/${voucher.id}_voucher.pdf`);
+      const outputPath = path.resolve(projectRoot, 'output', `${voucher.id}_voucher.pdf`);
 
       fs.writeFileSync(outputPath, pdfBytes);
 
@@ -281,6 +280,9 @@ voucherRouter.route('/')
     body('emailRecipient').isEmail().withMessage(
         "Gelieve een geldig emailadres op te geven."), (req, res, next) => {
       req.body.boughtDate = Date.now();
+      const now = new Date();
+      now.setFullYear(now.getFullYear() + 1);
+      req.body.validUntilDate = now;
       db.Voucher.create(req.body)
       .then((voucher) => {
         createMolliePayment(voucher).then((payment) => {

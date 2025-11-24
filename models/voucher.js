@@ -22,6 +22,10 @@ module.exports = function (sequelize, DataTypes) {
       type: DataTypes.DATE,
       allowNull: false
     },
+    validUntilDate: {
+      type: DataTypes.DATE,
+      allowNull: false
+    },
     voucherAmount: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false
