@@ -60,57 +60,6 @@ process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
  * Normalize a port into a number, string, or false.
  */
 
-// bin/www
-const fs = require('fs');
-const path = require('path');
-
-/**
- * Logt een directory boom, met mogelijkheid om mappen te negeren.
- * @param {string} dir - Startmap (bijv. process.cwd()).
- * @param {string} indent - Indentatie voor visuele boom.
- * @param {Set<string>} excludeDirs - Mapnamen (exact) die genegeerd worden.
- * @param {number} maxDepth - Optioneel: maximale diepte om te loggen (null = onbeperkt).
- * @param {number} depth - Interne teller, niet meegeven.
- */
-function logDirectoryTree(dir, indent = '', excludeDirs = new Set(), maxDepth = null, depth = 0) {
-  try {
-    const items = fs.readdirSync(dir, { withFileTypes: true });
-
-    for (const item of items) {
-      // Sla uitgesloten mappen over
-      if (item.isDirectory() && excludeDirs.has(item.name)) {
-        console.log(`${indent}📂 ${item.name} (⏭️ overgeslagen)`);
-        continue;
-      }
-
-      const fullPath = path.join(dir, item.name);
-      const icon = item.isDirectory() ? '📂' : '📄';
-      console.log(`${indent}${icon} ${item.name}`);
-
-      // Recursief door submappen, met dieptebegrenzing
-      if (item.isDirectory()) {
-        if (maxDepth === null || depth < maxDepth) {
-          logDirectoryTree(fullPath, indent + '  ', excludeDirs, maxDepth, depth + 1);
-        }
-      }
-    }
-  } catch (err) {
-    console.error(`⚠️  Fout bij lezen van "${dir}":`, err.message);
-  }
-}
-
-// === Startpunt: project root ===
-console.log('=== Directory Tree (zonder node_modules) ===');
-const exclude = new Set(['node_modules']); // voeg hier desgewenst meer mappen toe, bv. 'output', 'pdf'
-logDirectoryTree(process.cwd(), '', exclude /* , maxDepth = 4 */);
-console.log('===========================================');
-
-// ✅ Bonus: check specifiek je font-bestand (case-sensitive!)
-const fontPath = path.resolve(process.cwd(), 'fonts/FRSCRIPT.TTF');
-console.log('Font pad:', fontPath);
-console.log('Font aanwezig?', fs.existsSync(fontPath));
-
-
 function normalizePort(val) {
   var port = parseInt(val, 10);
 

@@ -74,10 +74,10 @@ async function generateVoucherPdf(voucher) {
   pdfDoc.registerFontkit(fontkit);
   const form = pdfDoc.getForm();
 
-  const frScriptFontPath = path.resolve(process.cwd(), 'fonts/FRSCRIPT.TTF');
+  const frScriptFontPath = path.resolve(projectRoot, 'fonts/FrScript.ttf');
   const frScriptFontBytes = fs.readFileSync(frScriptFontPath);
   const frScriptFont = await pdfDoc.embedFont(frScriptFontBytes);
-  const helveticaFontPath = path.resolve(process.cwd(),
+  const helveticaFontPath = path.resolve(projectRoot,
       'fonts/BarlowCondensed-SemiBold.otf');
   const helveticaFontBytes = fs.readFileSync(helveticaFontPath);
   const helveticaFont = await pdfDoc.embedFont(helveticaFontBytes);
@@ -177,13 +177,6 @@ async function generateVoucherPdf(voucher) {
 voucherRouter.use(bodyParser.json());
 const minVoucherAmount = 5;
 const maxVoucherAmount = 1000;
-
-console.log('VoucherRouter loaded!');
-console.log('Voucher route hit!');
-console.log('Resolved path:',
-    path.join(__dirname, '../fonts/FRSCRIPT.ttf'));
-console.log('Exists?',
-    fs.existsSync(path.join(__dirname, '../fonts/FRSCRIPT.ttf')));
 
 voucherRouter.route('/:voucherId/send-mail')
 .options(cors.corsWithOptions, (req, res) => {
