@@ -45,16 +45,19 @@ async function processPayment(voucherId, paymentId, next, res) {
     voucher.paymentStatus = payment.status;
     await voucher.save();
     if (payment.status === 'paid') {
-      await generateVoucherPdfAndSendMail(paymentId, next, res);
+      await generateVoucherPdfAndSendMail(voucher, next, res);
     }
   }
 }
 
-async function generateVoucherPdfAndSendMail(voucher, paymentId, next, res) {
+async function generateVoucherPdfAndSendMail(voucher, next, res) {
   const pdfBytes = await generateVoucherPdf(voucher);
 
-  const outputPath = path.resolve(projectRoot, 'output',
-      `${voucher.id}_voucher.pdf`);
+  const outputDir = path.resolve(projectRoot || process.cwd(), 'output');
+
+  await fs.promises.mkdir(outputDir, {recursive: true});
+
+  const outputPath = path.join(outputDir, `${voucher.id}_voucher.pdf`);
 
   await fs.promises.writeFile(outputPath, pdfBytes);
 
@@ -67,7 +70,6 @@ async function generateVoucherPdfAndSendMail(voucher, paymentId, next, res) {
 }
 
 async function generateVoucherPdf(voucher) {
-  console.log(projectRoot);
   const pdfPath = path.resolve(projectRoot, 'pdf', 'voucher-lots-template.pdf');
   const existingPdfBytes = fs.readFileSync(pdfPath);
   const pdfDoc = await PDFDocument.load(existingPdfBytes);
@@ -186,26 +188,19 @@ voucherRouter.route('/:voucherId/send-mail')
   res.statusCode = 403;
   res.end('GET operation not supported on /vouchers/send-mail');
 })
-.post(cors.corsWithOptions, authenticate.verifyToken, (req, res, next) => {
-  const voucherId = parseInt(req.params.voucherId, 10);
-
-  db.Voucher.findByPk(voucherId)
-  .then((voucher) => {
-    generateVoucherPdf(voucher).then((pdfBytes) => {
-      const outputPath = path.resolve(projectRoot, 'output',
-          `${voucher.id}_voucher.pdf`);
-
-      fs.writeFileSync(outputPath, pdfBytes);
-      sendVoucherMail(voucher, outputPath).then((response) => {
-        if (response === 'Success') {
-          res.status(200).send("Success");
-        } else {
-          res.status(500).send({error: 'Error'});
+.post(cors.corsWithOptions, authenticate.verifyToken,
+    async (req, res, next) => {
+      try {
+        const voucherId = parseInt(req.params.voucherId, 10);
+        const voucher = await db.Voucher.findByPk(voucherId);
+        if (!voucher) {
+          return res.status(404).send({error: 'Voucher not found'});
         }
-      }, (err) => next(err))
-    }, (err) => next(err));
-  }, (err) => next(err));
-})
+        await generateVoucherPdfAndSendMail(voucher, next, res);
+      } catch (err) {
+        next(err);
+      }
+    })
 .put(cors.corsWithOptions, authenticate.verifyToken, (req, res, next) => {
   res.statusCode = 403;
   res.end('PUT operation not supported on /vouchers/send-mail');
@@ -229,22 +224,26 @@ voucherRouter.route('/:voucherId/generate')
   db.Voucher.findByPk(voucherId)
   .then((voucher) => {
     generateVoucherPdf(voucher).then((pdfBytes) => {
-      const outputPath = path.resolve(projectRoot, 'output',
-          `${voucher.id}_voucher.pdf`);
+      const outputDir = path.resolve(projectRoot, 'output');
 
-      fs.writeFileSync(outputPath, pdfBytes);
+      fs.promises.mkdir(outputDir, {recursive: true}).then(() => {
+        const outputPath = path.join(outputDir, `${voucher.id}_voucher.pdf`);
 
-      res.status(200).download(outputPath, `${voucher.id}_voucher.pdf`,
-          (err) => {
-            if (err) {
-              next(err);
-            } else {
-              // Optioneel: bestand opruimen na download
-              fs.unlink(outputPath, () => {
-              });
-            }
-          });
+        fs.writeFileSync(outputPath, pdfBytes);
+
+        res.status(200).download(outputPath, `${voucher.id}_voucher.pdf`,
+            (err) => {
+              if (err) {
+                next(err);
+              } else {
+                // Optioneel: bestand opruimen na download
+                fs.unlink(outputPath, () => {
+                });
+              }
+            });
+      }, (err) => next(err));
     }, (err) => next(err));
+
   }, (err) => next(err));
 })
 .put(cors.corsWithOptions, authenticate.verifyToken, (req, res, next) => {
