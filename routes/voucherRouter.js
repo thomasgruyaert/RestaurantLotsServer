@@ -52,9 +52,10 @@ async function processPayment(voucherId, paymentId, next, res) {
     voucher.paymentStatus = payment.status;
     await voucher.save();
     if (payment.status === 'paid') {
-      await generateVoucherPdfAndSendMail(voucher, next, res);
+      return await generateVoucherPdfAndSendMail(voucher, next, res);
     }
   }
+  return 'Error';
 }
 
 async function generateVoucherPdfAndSendMail(voucher, next, res) {
@@ -69,15 +70,8 @@ async function generateVoucherPdfAndSendMail(voucher, next, res) {
   await fs.promises.writeFile(outputPath, pdfBytes);
 
   const response = await sendVoucherMail(voucher, outputPath);
-  if (response === 'Success') {
-    res.status(200).send("Success");
-  } else {
-    res.status(500).send({error: 'Error'});
-  }
+  return response;
 }
-
-process.stdout.write('MOLLIE_TEST_KEY exists? ' + !!process.env.MOLLIE_TEST_KEY + '\n');
-process.stdout.write('MOLLIE_LIVE_KEY exists? ' + !!process.env.MOLLIE_LIVE_KEY + '\n');
 
 async function generateVoucherPdf(voucher) {
   const pdfPath = path.resolve(projectRoot, 'pdf', 'voucher-lots-template.pdf');
@@ -206,7 +200,12 @@ voucherRouter.route('/:voucherId/send-mail')
         if (!voucher) {
           return res.status(404).send({error: 'Voucher not found'});
         }
-        await generateVoucherPdfAndSendMail(voucher, next, res);
+        const response = await generateVoucherPdfAndSendMail(voucher, next, res);
+        if (response === 'Success') {
+          return res.status(200).send("Success");
+        } else {
+          return res.status(500).send({error: 'Error'});
+        }
       } catch (err) {
         next(err);
       }
@@ -293,8 +292,6 @@ voucherRouter.route('/')
     ),
     body('emailRecipient').isEmail().withMessage(
         "Gelieve een geldig emailadres op te geven."), (req, res, next) => {
-      process.stdout.write('MOLLIE_TEST_KEY? ' + process.env.MOLLIE_TEST_KEY + '\n');
-      process.stdout.write('MOLLIE_LIVE_KEY? ' + process.env.MOLLIE_LIVE_KEY + '\n');
       req.body.boughtDate = Date.now();
       const now = new Date();
       now.setFullYear(now.getFullYear() + 1);
@@ -329,7 +326,13 @@ voucherRouter.route('/:voucherId/payment-update')
   const paymentId = req.body.id;
   const voucherId = parseInt(req.params.voucherId, 10);
   processPayment(voucherId, paymentId, next, res).then(
-      () => res.sendStatus(200),
+      (response) => {
+        if (response === 'Success') {
+          return res.status(200).send("Success");
+        } else {
+          return res.status(500).send({error: 'Error'});
+        }
+      },
       (err) => next(err)).catch((err) => next(err));
 })
 .put(cors.corsWithOptions, authenticate.verifyToken, (req, res, next) => {
