@@ -16,10 +16,13 @@ const mollieClient = createMollieClient(
 const fs = require('fs');
 const {PDFDocument, rgb} = require('pdf-lib');
 const path = require('path');
+const {isLocal, voucherAuthenticationRequired} = require("../shared/flags");
 
 const projectRoot = process.cwd();
 
 async function createMolliePayment(voucher) {
+  const baseUrl = isLocal ? 'http://localhost:3000' : 'https://www.restaurantlots.be';
+
   const payment = await mollieClient.payments.create({
     amount: {
       value: parseFloat(voucher.voucherAmount).toFixed(2),
@@ -27,10 +30,8 @@ async function createMolliePayment(voucher) {
     },
     description: 'Lots cadeaubon ter waarde van ' + voucher.voucherAmount
         + ' EUR',
-    redirectUrl: `https://www.restaurantlots.be/vouchers/${voucher.id}/confirmation`,
-    cancelUrl: `https://www.restaurantlots.be/vouchers/${voucher.id}/canceled`,
-    // redirectUrl: `http://localhost:3000/vouchers/${voucher.id}/confirmation`,
-    // cancelUrl: `http://localhost:3000/vouchers/${voucher.id}/canceled`,
+    redirectUrl: `${baseUrl}/vouchers/${voucher.id}/confirmation`,
+    cancelUrl: `${baseUrl}/vouchers/${voucher.id}/canceled`,
     shippingAddress: {email: voucher.emailRecipient},
     locale: 'nl_BE',
     webhookUrl: `https://api.restaurantlots.be/vouchers/${voucher.id}/payment-update`
@@ -269,7 +270,7 @@ voucherRouter.route('/')
   .catch((err) => next(err));
 })
 .post(cors.corsWithOptions,
-    authenticate.verifyToken,
+    voucherAuthenticationRequired ? authenticate.verifyToken : (req, res, next) => next(),
     body('nameGifters').isLength({min: 2}).withMessage(
         "Gelieve een geldige achternaam op te geven"),
     body('nameReceivers').isLength({min: 2}).withMessage(
