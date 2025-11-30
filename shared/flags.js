@@ -1,6 +1,10 @@
+const isLocal = false;
+const voucherAuthenticationRequired = true;
+const testingMode = true;
+
 module.exports = {
-    isLocal: false,
-    voucherAuthenticationRequired: true,
-    testingMode: true
+  isLocal,
+  voucherAuthenticationRequired,
+  testingMode
 };
 
