@@ -9,6 +9,7 @@ const {sendVoucherMail} = require('../nodemailer/nodemailer');
 const fontkit = require('@pdf-lib/fontkit');
 const randtoken = require('rand-token');
 const {createMollieClient} = require('@mollie/api-client');
+const {isLocal, voucherAuthenticationRequired, testingMode} = require("../shared/flags");
 
 const mollieClient = createMollieClient(
     {apiKey: testingMode ? process.env.MOLLIE_TEST_KEY : process.env.MOLLIE_LIVE_KEY});
@@ -16,7 +17,6 @@ const mollieClient = createMollieClient(
 const fs = require('fs');
 const {PDFDocument, rgb} = require('pdf-lib');
 const path = require('path');
-const {isLocal, voucherAuthenticationRequired, testingMode} = require("../shared/flags");
 
 const projectRoot = process.cwd();
 
