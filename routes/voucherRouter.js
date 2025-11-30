@@ -9,7 +9,7 @@ const {sendVoucherMail} = require('../nodemailer/nodemailer');
 const fontkit = require('@pdf-lib/fontkit');
 const randtoken = require('rand-token');
 const {createMollieClient} = require('@mollie/api-client');
-const isLocal = false;
+const isLocal = true;
 const voucherAuthenticationRequired = true;
 const testingMode = true;
 
@@ -75,6 +75,9 @@ async function generateVoucherPdfAndSendMail(voucher, next, res) {
     res.status(500).send({error: 'Error'});
   }
 }
+
+process.stdout.write('MOLLIE_TEST_KEY exists? ' + !!process.env.MOLLIE_TEST_KEY + '\n');
+process.stdout.write('MOLLIE_LIVE_KEY exists? ' + !!process.env.MOLLIE_LIVE_KEY + '\n');
 
 async function generateVoucherPdf(voucher) {
   const pdfPath = path.resolve(projectRoot, 'pdf', 'voucher-lots-template.pdf');
@@ -290,6 +293,8 @@ voucherRouter.route('/')
     ),
     body('emailRecipient').isEmail().withMessage(
         "Gelieve een geldig emailadres op te geven."), (req, res, next) => {
+      process.stdout.write('MOLLIE_TEST_KEY? ' + process.env.MOLLIE_TEST_KEY + '\n');
+      process.stdout.write('MOLLIE_LIVE_KEY? ' + process.env.MOLLIE_LIVE_KEY + '\n');
       req.body.boughtDate = Date.now();
       const now = new Date();
       now.setFullYear(now.getFullYear() + 1);
