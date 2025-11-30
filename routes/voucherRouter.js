@@ -11,12 +11,12 @@ const randtoken = require('rand-token');
 const {createMollieClient} = require('@mollie/api-client');
 
 const mollieClient = createMollieClient(
-    {apiKey: process.env.MOLLIE_TEST_KEY});
+    {apiKey: testingMode ? process.env.MOLLIE_TEST_KEY : process.env.MOLLIE_LIVE_KEY});
 
 const fs = require('fs');
 const {PDFDocument, rgb} = require('pdf-lib');
 const path = require('path');
-const {isLocal, voucherAuthenticationRequired} = require("../shared/flags");
+const {isLocal, voucherAuthenticationRequired, testingMode} = require("../shared/flags");
 
 const projectRoot = process.cwd();
 
