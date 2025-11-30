@@ -9,10 +9,15 @@ const {sendVoucherMail} = require('../nodemailer/nodemailer');
 const fontkit = require('@pdf-lib/fontkit');
 const randtoken = require('rand-token');
 const {createMollieClient} = require('@mollie/api-client');
-const {isLocal, voucherAuthenticationRequired, testingMode} = require("../shared/flags");
+const isLocal = false;
+const voucherAuthenticationRequired = true;
+const testingMode = true;
+
+const key = testingMode ? process.env.MOLLIE_TEST_KEY
+    : process.env.MOLLIE_LIVE_KEY;
 
 const mollieClient = createMollieClient(
-    {apiKey: testingMode ? process.env.MOLLIE_TEST_KEY : process.env.MOLLIE_LIVE_KEY});
+    {apiKey: key});
 
 const fs = require('fs');
 const {PDFDocument, rgb} = require('pdf-lib');
@@ -21,7 +26,8 @@ const path = require('path');
 const projectRoot = process.cwd();
 
 async function createMolliePayment(voucher) {
-  const baseUrl = isLocal ? 'http://localhost:3000' : 'https://www.restaurantlots.be';
+  const baseUrl = isLocal ? 'http://localhost:3000'
+      : 'https://www.restaurantlots.be';
 
   const payment = await mollieClient.payments.create({
     amount: {
@@ -270,7 +276,8 @@ voucherRouter.route('/')
   .catch((err) => next(err));
 })
 .post(cors.corsWithOptions,
-    voucherAuthenticationRequired ? authenticate.verifyToken : (req, res, next) => next(),
+    voucherAuthenticationRequired ? authenticate.verifyToken : (req, res,
+        next) => next(),
     body('nameGifters').isLength({min: 2}).withMessage(
         "Gelieve een geldige achternaam op te geven"),
     body('nameReceivers').isLength({min: 2}).withMessage(
