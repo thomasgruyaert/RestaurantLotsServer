@@ -9,7 +9,7 @@ const {sendVoucherMail} = require('../nodemailer/nodemailer');
 const fontkit = require('@pdf-lib/fontkit');
 const randtoken = require('rand-token');
 const {createMollieClient} = require('@mollie/api-client');
-const isLocal = true;
+const isLocal = false;
 const voucherAuthenticationRequired = true;
 const testingMode = true;
 
