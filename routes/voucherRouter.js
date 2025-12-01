@@ -53,7 +53,7 @@ async function createMolliePayment(voucher) {
     cancelUrl: `${baseUrl}/vouchers/${voucher.id}/canceled`,
     shippingAddress: {email: voucher.emailRecipient},
     locale: 'nl_BE',
-    webhookUrl: `https://api.restaurantlots.be/vouchers/payment-update`,
+    webhookUrl: `https://api.restaurantlots.be/api/vouchers/payment-update`,
     metadata: { voucherId: voucher.id }
   });
   return payment;
