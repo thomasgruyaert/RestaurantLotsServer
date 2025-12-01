@@ -42,7 +42,7 @@ async function createMolliePayment(voucher) {
   const baseUrl = isLocal ? 'http://localhost:3000'
       : 'https://www.restaurantlots.be';
 
-  const payment = await mollieClient.payments.create({
+  return await mollieClient.payments.create({
     amount: {
       value: parseFloat(voucher.voucherAmount).toFixed(2),
       currency: 'EUR'
@@ -53,21 +53,13 @@ async function createMolliePayment(voucher) {
     cancelUrl: `${baseUrl}/vouchers/${voucher.id}/canceled`,
     shippingAddress: {email: voucher.emailRecipient},
     locale: 'nl_BE',
-    webhookUrl: `https://api.restaurantlots.be/api/vouchers/payment-update`,
-    metadata: { voucherId: voucher.id }
+    webhookUrl: `https://api.restaurantlots.be/api/vouchers/${voucher.id}/payment-update`,
   });
-  return payment;
 }
 
-async function processPayment(paymentId) {
+async function processPayment(voucherId, paymentId) {
   process.stdout.write("Payment ID: " + paymentId + "\n");
   const payment = await mollieClient.payments.get(paymentId);
-  const voucherId = parseInt(payment.metadata?.voucherId, 10);
-  if (!voucherId) {
-    console.error(`Missing voucherId in metadata for payment ${paymentId}`);
-    return 'Error';
-  }
-  process.stdout.write("VoucherId: " + voucherId + "\n");
   const voucher = await db.Voucher.findByPk(voucherId);
   if(!voucher) return 'Error';
 
@@ -341,15 +333,18 @@ voucherRouter.route('/')
   res.end('DELETE operation not supported on /vouchers');
 });
 
-voucherRouter.route('/payment-update')
+voucherRouter.route('/:voucherId/payment-update')
 .post((req, res, next) => {
-  const paymentId = req.body.id;
+  process.stdout.write("RECEIVED PAYMENT UPDATE" + "\n");
   process.stdout.write(req.body + "\n");
+  const paymentId = req.body.id;
   if (!paymentId) {
     return res.status(400).send('Missing payment ID');
   }
+  const voucherId = parseInt(req.params.voucherId, 10);
+  process.stdout.write("VoucherId: " + voucherId + "\n");
   process.stdout.write("Processing payment..." + "\n");
-  processPayment(paymentId).then(
+  processPayment(voucherId, paymentId).then(
       (response) => {
         if (response === 'Success') {
           return res.status(200).send("Success");
