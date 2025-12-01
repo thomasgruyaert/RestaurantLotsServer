@@ -59,7 +59,7 @@ async function createMolliePayment(voucher) {
   return payment;
 }
 
-async function processPayment(paymentId, next, res) {
+async function processPayment(paymentId) {
   process.stdout.write("Payment ID: " + paymentId + "\n");
   const payment = await mollieClient.payments.get(paymentId);
   const voucherId = parseInt(payment.metadata?.voucherId, 10);
@@ -69,18 +69,24 @@ async function processPayment(paymentId, next, res) {
   }
   process.stdout.write("VoucherId: " + voucherId + "\n");
   const voucher = await db.Voucher.findByPk(voucherId);
-  if (voucher) {
-    process.stdout.write("Found voucher, updating status...");
-    voucher.paymentStatus = payment.status;
-    await voucher.save();
-    if (payment.status === 'paid') {
-      return await generateVoucherPdfAndSendMail(voucher, next, res);
-    }
+  if(!voucher) return 'Error';
+
+  if (voucher.paymentStatus === 'paid') {
+    console.log(`Voucher ${voucherId} already processed`);
+    return 'Success'; // Treat as success so Mollie stops retrying
   }
+
+  process.stdout.write("Found voucher, updating status...");
+  voucher.paymentStatus = payment.status;
+  await voucher.save();
+  if (payment.status === 'paid') {
+    return await generateVoucherPdfAndSendMail(voucher);
+  }
+
   return 'Error';
 }
 
-async function generateVoucherPdfAndSendMail(voucher, next, res) {
+async function generateVoucherPdfAndSendMail(voucher) {
   const pdfBytes = await generateVoucherPdf(voucher);
 
   const outputDir = path.resolve(projectRoot || process.cwd(), 'output');
@@ -222,7 +228,7 @@ voucherRouter.route('/:voucherId/send-mail')
         if (!voucher) {
           return res.status(404).send({error: 'Voucher not found'});
         }
-        const response = await generateVoucherPdfAndSendMail(voucher, next, res);
+        const response = await generateVoucherPdfAndSendMail(voucher);
         if (response === 'Success') {
           return res.status(200).send("Success");
         } else {
@@ -336,14 +342,6 @@ voucherRouter.route('/')
 });
 
 voucherRouter.route('/payment-update')
-.options(cors.corsWithOptions, (req, res) => {
-  res.sendStatus(200);
-})
-.get(cors.cors, authenticate.verifyToken, (req, res, next) => {
-  res.statusCode = 403;
-  res.end(
-      `GET operation not supported on /vouchers/payment-update`);
-})
 .post((req, res, next) => {
   const paymentId = req.body.id;
   process.stdout.write(req.body + "\n");
@@ -351,7 +349,7 @@ voucherRouter.route('/payment-update')
     return res.status(400).send('Missing payment ID');
   }
   process.stdout.write("Processing payment..." + "\n");
-  processPayment(paymentId, next, res).then(
+  processPayment(paymentId).then(
       (response) => {
         if (response === 'Success') {
           return res.status(200).send("Success");
@@ -361,16 +359,6 @@ voucherRouter.route('/payment-update')
       },
       (err) => next(err)).catch((err) => next(err));
 })
-.put(cors.corsWithOptions, authenticate.verifyToken, (req, res, next) => {
-  res.statusCode = 403;
-  res.end(
-      `PUT operation not supported on /vouchers/payment-update`);
-})
-.delete(cors.corsWithOptions, authenticate.verifyToken, (req, res, next) => {
-  res.statusCode = 403;
-  res.end(
-      `DELETE operation not supported on /vouchers/payment-update`);
-});
 
 voucherRouter.route('/:voucherId')
 .options(cors.corsWithOptions, (req, res) => {
