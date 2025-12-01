@@ -344,7 +344,7 @@ voucherRouter.route('/payment-update')
   res.end(
       `GET operation not supported on /vouchers/payment-update`);
 })
-.post(cors.cors, (req, res, next) => {
+.post((req, res, next) => {
   const paymentId = req.body.id;
   process.stdout.write(req.body + "\n");
   if (!paymentId) {
