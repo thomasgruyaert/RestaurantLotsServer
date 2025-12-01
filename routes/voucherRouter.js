@@ -25,6 +25,19 @@ const path = require('path');
 
 const projectRoot = process.cwd();
 
+function verifySignature(payload, providedSignature) {
+  const calculatedSignature = crypto
+  .createHmac('sha256', SHARED_SECRET)
+  .update(payload)
+  .digest('hex');
+
+  // Use constant-time comparison to prevent timing attacks
+  return crypto.timingSafeEqual(
+      Buffer.from(calculatedSignature, 'utf-8'),
+      Buffer.from(providedSignature, 'utf-8')
+  );
+}
+
 async function createMolliePayment(voucher) {
   const baseUrl = isLocal ? 'http://localhost:3000'
       : 'https://www.restaurantlots.be';
@@ -40,15 +53,24 @@ async function createMolliePayment(voucher) {
     cancelUrl: `${baseUrl}/vouchers/${voucher.id}/canceled`,
     shippingAddress: {email: voucher.emailRecipient},
     locale: 'nl_BE',
-    webhookUrl: `https://api.restaurantlots.be/vouchers/${voucher.id}/payment-update`
+    webhookUrl: `https://api.restaurantlots.be/vouchers/payment-update`,
+    metadata: { voucherId: voucher.id }
   });
   return payment;
 }
 
-async function processPayment(voucherId, paymentId, next, res) {
+async function processPayment(paymentId, next, res) {
+  process.stdout.write("Payment ID: " + paymentId + "\n");
   const payment = await mollieClient.payments.get(paymentId);
+  const voucherId = parseInt(payment.metadata?.voucherId, 10);
+  if (!voucherId) {
+    console.error(`Missing voucherId in metadata for payment ${paymentId}`);
+    return 'Error';
+  }
+  process.stdout.write("VoucherId: " + voucherId + "\n");
   const voucher = await db.Voucher.findByPk(voucherId);
   if (voucher) {
+    process.stdout.write("Found voucher, updating status...");
     voucher.paymentStatus = payment.status;
     await voucher.save();
     if (payment.status === 'paid') {
@@ -313,19 +335,23 @@ voucherRouter.route('/')
   res.end('DELETE operation not supported on /vouchers');
 });
 
-voucherRouter.route('/:voucherId/payment-update')
+voucherRouter.route('/payment-update')
 .options(cors.corsWithOptions, (req, res) => {
   res.sendStatus(200);
 })
 .get(cors.cors, authenticate.verifyToken, (req, res, next) => {
   res.statusCode = 403;
   res.end(
-      `GET operation not supported on /vouchers/${req.params.voucherId}/payment-update`);
+      `GET operation not supported on /vouchers/payment-update`);
 })
 .post(cors.cors, (req, res, next) => {
   const paymentId = req.body.id;
-  const voucherId = parseInt(req.params.voucherId, 10);
-  processPayment(voucherId, paymentId, next, res).then(
+  process.stdout.write(req.body + "\n");
+  if (!paymentId) {
+    return res.status(400).send('Missing payment ID');
+  }
+  process.stdout.write("Processing payment..." + "\n");
+  processPayment(paymentId, next, res).then(
       (response) => {
         if (response === 'Success') {
           return res.status(200).send("Success");
@@ -338,12 +364,12 @@ voucherRouter.route('/:voucherId/payment-update')
 .put(cors.corsWithOptions, authenticate.verifyToken, (req, res, next) => {
   res.statusCode = 403;
   res.end(
-      `PUT operation not supported on /vouchers/${req.params.voucherId}/payment-update`);
+      `PUT operation not supported on /vouchers/payment-update`);
 })
 .delete(cors.corsWithOptions, authenticate.verifyToken, (req, res, next) => {
   res.statusCode = 403;
   res.end(
-      `DELETE operation not supported on /vouchers/${req.params.voucherId}/payment-update`);
+      `DELETE operation not supported on /vouchers/payment-update`);
 });
 
 voucherRouter.route('/:voucherId')
