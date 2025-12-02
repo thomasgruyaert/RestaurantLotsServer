@@ -20,15 +20,15 @@ const tempNewsRouter = require('./routes/tempNewsRouter');
 const excludedDatesRouter = require('./routes/excludedDatesRouter');
 const voucherRouter = require('./routes/voucherRouter');
 
-db.sequelize.sync({ force: false })
-  .then(() => {
-    console.log("Connected correctly to server");
-  })
-  // .then(() => {
-    // app.listen(PORT, () => {
-      // console.log(`App listening on PORT ${PORT}`);
-    // });
-  // });
+db.sequelize.sync({force: false})
+.then(() => {
+  console.log("Connected correctly to server");
+})
+// .then(() => {
+// app.listen(PORT, () => {
+// console.log(`App listening on PORT ${PORT}`);
+// });
+// });
 
 var app = express();
 app.use(helmet());
@@ -36,12 +36,12 @@ app.use(compression());
 
 // Secure traffic only
 // app.all('*', (req, res, next) => {
-  // if (req.secure) {
-    // return next();
-  // }
-  // else {
-    // res.redirect(307, 'https://' + req.hostname + ':' + app.get('secPort') + req.url);
-  // }
+// if (req.secure) {
+// return next();
+// }
+// else {
+// res.redirect(307, 'https://' + req.hostname + ':' + app.get('secPort') + req.url);
+// }
 // });
 
 // view engine setup
@@ -50,9 +50,21 @@ app.set('view engine', 'jade');
 
 app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
-app.use('/api/vouchers/stripe_webhook', express.raw({ type: 'application/json' }));
+app.use('/api/vouchers/stripe_webhook',
+    express.raw({type: 'application/json'}));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({extended: false}));
+app.use((req, res, next) => {
+  if (req.originalUrl.endsWith('payment-update')) {
+    process.stdout.write('--- Mollie Webhook Request ---\n');
+    process.stdout.write(`Method: ${req.method}\n`);
+    process.stdout.write(`URL: ${req.originalUrl}\n`);
+    process.stdout.write('Headers: ' + JSON.stringify(req.headers) + '\n');
+    process.stdout.write('Body: ' + JSON.stringify(req.body) + '\n');
+    process.stdout.write('-------------------------------\n');
+  }
+  next();
+});
 
 app.use('/', indexRouter);
 app.use('/api/auth', authRouter);
@@ -66,7 +78,7 @@ app.use('/api/vouchers', voucherRouter);
 app.use(express.static(path.join(__dirname, 'public')));
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   var err = new Error('Not Found');
   err.status = 404;
   next(err);
@@ -74,7 +86,7 @@ app.use(function(req, res, next) {
 
 // error handler
 
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};

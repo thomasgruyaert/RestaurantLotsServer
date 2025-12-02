@@ -42,6 +42,8 @@ async function createMolliePayment(voucher) {
   const baseUrl = isLocal ? 'http://localhost:3000'
       : 'https://www.restaurantlots.be';
 
+  console.log(baseUrl);
+
   return await mollieClient.payments.create({
     amount: {
       value: parseFloat(voucher.voucherAmount).toFixed(2),
@@ -319,6 +321,7 @@ voucherRouter.route('/')
       db.Voucher.create(req.body)
       .then((voucher) => {
         createMolliePayment(voucher).then((payment) => {
+          process.stdout.write("Created Mollie payment with ID: " + payment.id + "\n");
           return res.status(200).json({checkoutUrl: payment.getCheckoutUrl()});
         })
       }, (err) => next(err))
@@ -336,7 +339,7 @@ voucherRouter.route('/')
 voucherRouter.route('/:voucherId/payment-update')
 .post((req, res, next) => {
   process.stdout.write("RECEIVED PAYMENT UPDATE" + "\n");
-  process.stdout.write(req.body + "\n");
+  process.stdout.write(JSON.stringify(req.body) + "\n");
   const paymentId = req.body.id;
   if (!paymentId) {
     return res.status(400).send('Missing payment ID');
