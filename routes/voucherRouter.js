@@ -8,10 +8,12 @@ const {body, validationResult} = require('express-validator');
 const {sendVoucherMail} = require('../nodemailer/nodemailer');
 const fontkit = require('@pdf-lib/fontkit');
 const randtoken = require('rand-token');
+const crypto = require('crypto');
 const {createMollieClient} = require('@mollie/api-client');
 const isLocal = false;
 const voucherAuthenticationRequired = true;
 const testingMode = true;
+
 
 const key = testingMode ? process.env.MOLLIE_TEST_KEY
     : process.env.MOLLIE_LIVE_KEY;
@@ -25,24 +27,9 @@ const path = require('path');
 
 const projectRoot = process.cwd();
 
-function verifySignature(payload, providedSignature) {
-  const calculatedSignature = crypto
-  .createHmac('sha256', SHARED_SECRET)
-  .update(payload)
-  .digest('hex');
-
-  // Use constant-time comparison to prevent timing attacks
-  return crypto.timingSafeEqual(
-      Buffer.from(calculatedSignature, 'utf-8'),
-      Buffer.from(providedSignature, 'utf-8')
-  );
-}
-
 async function createMolliePayment(voucher) {
   const baseUrl = isLocal ? 'http://localhost:3000'
       : 'https://www.restaurantlots.be';
-
-  console.log(baseUrl);
 
   return await mollieClient.payments.create({
     amount: {
@@ -51,7 +38,7 @@ async function createMolliePayment(voucher) {
     },
     description: 'Lots cadeaubon ter waarde van ' + voucher.voucherAmount
         + ' EUR',
-    redirectUrl: `${baseUrl}/vouchers/${voucher.id}/confirmation`,
+    redirectUrl: `${baseUrl}/vouchers/${voucher.id}/confirmation?token=${voucher.confirmationToken}`,
     cancelUrl: `${baseUrl}/vouchers/${voucher.id}/canceled`,
     shippingAddress: {email: voucher.emailRecipient},
     locale: 'nl_BE',
@@ -63,7 +50,9 @@ async function processPayment(voucherId, paymentId) {
   process.stdout.write("Payment ID: " + paymentId + "\n");
   const payment = await mollieClient.payments.get(paymentId);
   const voucher = await db.Voucher.findByPk(voucherId);
-  if(!voucher) return 'Error';
+  if (!voucher) {
+    return 'Error';
+  }
 
   if (voucher.paymentStatus === 'paid') {
     console.log(`Voucher ${voucherId} already processed`);
@@ -73,8 +62,14 @@ async function processPayment(voucherId, paymentId) {
   process.stdout.write("Found voucher, updating status...");
   voucher.paymentStatus = payment.status;
   await voucher.save();
-  if (payment.status === 'paid') {
-    return await generateVoucherPdfAndSendMail(voucher);
+
+  if (payment.status === 'paid' && !voucher.emailSent) {
+    const response = await generateVoucherPdfAndSendMail(voucher);
+    if(response === 'Success'){
+      voucher.emailSent = true;
+      await voucher.save();
+    }
+    return response;
   }
 
   return 'Error';
@@ -206,6 +201,39 @@ voucherRouter.use(bodyParser.json());
 const minVoucherAmount = 5;
 const maxVoucherAmount = 1000;
 
+voucherRouter.route('/:voucherId/status')
+.options(cors.corsWithOptions, (req, res) => {
+  res.sendStatus(200);
+})
+.get(cors.cors, async (req, res, next) => {
+  try {
+    const voucherId = parseInt(req.params.voucherId, 10);
+    const token = req.query.token;
+
+    if (isNaN(voucherId) || !token) {
+      return res.status(400).json({error: 'Invalid request'});
+    }
+
+    const voucher = await db.Voucher.findByPk(voucherId);
+    if (!voucher) {
+      return res.status(404).json({error: 'Voucher not found'});
+    }
+
+    if (voucher.confirmationToken !== token) {
+      return res.status(403).json({error: 'Invalid token'});
+    }
+
+    const payment = await mollieClient.payments.get(voucher.paymentId);
+
+    return res.json({
+      paymentValid: payment.status === 'paid',
+      paymentStatus: payment.status,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 voucherRouter.route('/:voucherId/send-mail')
 .options(cors.corsWithOptions, (req, res) => {
   res.sendStatus(200);
@@ -318,10 +346,15 @@ voucherRouter.route('/')
       const now = new Date();
       now.setFullYear(now.getFullYear() + 1);
       req.body.validUntilDate = now;
+      req.body.confirmationToken = crypto.randomBytes(32).toString('hex');
       db.Voucher.create(req.body)
       .then((voucher) => {
-        createMolliePayment(voucher).then((payment) => {
-          process.stdout.write("Created Mollie payment with ID: " + payment.id + "\n");
+        createMolliePayment(voucher).then(async (payment) => {
+          process.stdout.write(
+              "Created Mollie payment with ID: " + payment.id + "\n");
+          voucher.paymentId = payment.id;
+          voucher.paymentStatus = payment.status;
+          await voucher.save();
           return res.status(200).json({checkoutUrl: payment.getCheckoutUrl()});
         })
       }, (err) => next(err))

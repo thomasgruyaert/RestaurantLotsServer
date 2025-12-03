@@ -38,6 +38,18 @@ module.exports = function (sequelize, DataTypes) {
       type: DataTypes.ENUM("waiting", "open", "pending", "authorized", "paid", "canceled", "expired", "failed"),
       allowNull: false,
       defaultValue: "waiting"
+    },
+    paymentId: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    confirmationToken: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    voucherMailSent: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
     }
   });
   return Voucher;
