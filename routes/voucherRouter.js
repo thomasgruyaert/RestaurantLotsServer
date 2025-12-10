@@ -11,8 +11,8 @@ const randtoken = require('rand-token');
 const crypto = require('crypto');
 const {createMollieClient} = require('@mollie/api-client');
 const isLocal = false;
-const voucherAuthenticationRequired = true;
-const testingMode = true;
+const voucherAuthenticationRequired = false;
+const testingMode = false;
 
 
 const key = testingMode ? process.env.MOLLIE_TEST_KEY
@@ -91,7 +91,7 @@ async function generateVoucherPdfAndSendMail(voucher) {
 }
 
 async function generateVoucherPdf(voucher) {
-  const pdfPath = path.resolve(projectRoot, 'pdf', 'voucher-lots-template.pdf');
+  const pdfPath = path.resolve(projectRoot, 'pdf', 'voucher-lots-template-big.pdf');
   const existingPdfBytes = fs.readFileSync(pdfPath);
   const pdfDoc = await PDFDocument.load(existingPdfBytes);
   pdfDoc.registerFontkit(fontkit);
@@ -126,19 +126,19 @@ async function generateVoucherPdf(voucher) {
       voucher.customMessage, 30);
   const textWidthSmakelijk = frScriptFont.widthOfTextAtSize('Smakelijk!', 40);
 
-  page.drawText(`Aan: ${voucher.nameReceivers}`,
-      {x: 60, y: 210, font: helveticaFont, size: 20});
-  page.drawText(`Geschonken door: ${voucher.nameGifters}`,
-      {x: 60, y: 180, font: helveticaFont, size: 20});
-  page.drawText(`Bedrag: € ${voucher.voucherAmount}`, {
-    x: width - textWidthHelveticaVoucherAmount - 160,
-    y: 210,
+  page.drawText(`AAN: ${voucher.nameReceivers}`,
+      {x: 60, y: 190, font: helveticaFont, size: 20});
+  page.drawText(`GESCHONKEN DOOR: ${voucher.nameGifters}`,
+      {x: 60, y: 150, font: helveticaFont, size: 20});
+  page.drawText(`BEDRAG: € ${voucher.voucherAmount}`, {
+    x: width - textWidthHelveticaValidUntil - 200,
+    y: 190,
     font: helveticaFont,
     size: 20
   });
-  page.drawText(`Geldig tot en met: ${validUntilDateString}`, {
-    x: width - textWidthHelveticaValidUntil - 180,
-    y: 180,
+  page.drawText(`GELDIG TOT EN MET: ${validUntilDateString}`, {
+    x: width - textWidthHelveticaValidUntil - 200,
+    y: 150,
     font: helveticaFont,
     size: 20
   });
@@ -152,37 +152,37 @@ async function generateVoucherPdf(voucher) {
   })
 
   //Aan
-  page.drawLine({
-    start: {x: 60, y: 205},
-    end: {x: 90, y: 205},
-    thickness: 2,
-    color: rgb(0, 0, 0),
-    opacity: 1
-  });
+  // page.drawLine({
+  //   start: {x: 60, y: 205},
+  //   end: {x: 90, y: 205},
+  //   thickness: 2,
+  //   color: rgb(0, 0, 0),
+  //   opacity: 1
+  // });
   //Geschonken door
-  page.drawLine({
-    start: {x: 60, y: 175},
-    end: {x: 185, y: 175},
-    thickness: 2,
-    color: rgb(0, 0, 0),
-    opacity: 1
-  });
+  // page.drawLine({
+  //   start: {x: 60, y: 175},
+  //   end: {x: 185, y: 175},
+  //   thickness: 2,
+  //   color: rgb(0, 0, 0),
+  //   opacity: 1
+  // });
   //Bedrag
-  page.drawLine({
-    start: {x: width - textWidthHelveticaVoucherAmount - 160, y: 205},
-    end: {x: width - textWidthHelveticaVoucherAmount - 160 + 55, y: 205},
-    thickness: 2,
-    color: rgb(0, 0, 0),
-    opacity: 1
-  });
+  // page.drawLine({
+  //   start: {x: width - textWidthHelveticaValidUntil - 180, y: 205},
+  //   end: {x: width - textWidthHelveticaValidUntil - 180 + 55, y: 205},
+  //   thickness: 2,
+  //   color: rgb(0, 0, 0),
+  //   opacity: 1
+  // });
   //Geldig tot en met
-  page.drawLine({
-    start: {x: width - textWidthHelveticaValidUntil - 180, y: 175},
-    end: {x: width - textWidthHelveticaValidUntil - 180 + 125, y: 175},
-    thickness: 2,
-    color: rgb(0, 0, 0),
-    opacity: 1
-  });
+  // page.drawLine({
+  //   start: {x: width - textWidthHelveticaValidUntil - 180, y: 175},
+  //   end: {x: width - textWidthHelveticaValidUntil - 180 + 125, y: 175},
+  //   thickness: 2,
+  //   color: rgb(0, 0, 0),
+  //   opacity: 1
+  // });
 
   page.drawText(identifierText, {
     x: width - textWidthHelvetica - 60,
@@ -198,7 +198,7 @@ async function generateVoucherPdf(voucher) {
 }
 
 voucherRouter.use(bodyParser.json());
-const minVoucherAmount = 5;
+const minVoucherAmount = 0.1;
 const maxVoucherAmount = 1000;
 
 voucherRouter.route('/:voucherId/status')
@@ -330,10 +330,10 @@ voucherRouter.route('/')
 .post(cors.corsWithOptions,
     voucherAuthenticationRequired ? authenticate.verifyToken : (req, res,
         next) => next(),
-    body('nameGifters').isLength({min: 2}).withMessage(
-        "Gelieve een geldige achternaam op te geven"),
-    body('nameReceivers').isLength({min: 2}).withMessage(
-        "Gelieve een geldige voornaam op te geven"),
+    body('nameGifters').isLength({min: 2, max:45}).withMessage(
+        "Gelieve een geldige tekst op te geven van maximum 45 karakters"),
+    body('nameReceivers').isLength({min: 2, max:45}).withMessage(
+        "Gelieve een geldige tekst op te geven van maximum 45 karakters"),
     body('customMessage').optional().isLength({max: 60}).withMessage(
         "Gelieve een boodschap op te geven van maximum 60 tekens"),
     body('voucherAmount').isFloat(
