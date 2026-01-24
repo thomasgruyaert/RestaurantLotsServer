@@ -4,6 +4,7 @@ const nodemailer = require('nodemailer');
 const {MailtrapClient} = require("mailtrap");
 const path = require('path');
 const {renderTemplate} = require("./mailtrap-hbs-renderer");
+const fs = require('fs');
 
 // let transporter = nodemailer.createTransport({
 //     host: process.env.MAIL_HOST,
@@ -189,7 +190,7 @@ async function sendVoucherMail(voucher, pdfPath) {
   };
   const html = await renderTemplate("voucherMail", context);
 
-  const pdfBuffer = await fs.readFile(pdfPath);
+  const pdfBuffer = await fs.promises.readFile(pdfPath);
   const pdfBase64 = pdfBuffer.toString("base64");
 
   return await client.send({
