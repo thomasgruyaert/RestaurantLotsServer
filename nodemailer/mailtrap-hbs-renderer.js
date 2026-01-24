@@ -1,9 +1,10 @@
 // mailtrap-hbs-renderer.js
-import fs from "node:fs/promises";
-import path from "node:path";
-import Handlebars from "handlebars";
+const fs = require("fs").promises;
+const path = require("path");
+const Handlebars = require("handlebars");
 
-const templatesDir = path.resolve("./nodemailer/templates/");
+// In CommonJS, __dirname werkt gewoon
+const templatesDir = path.join(__dirname, "templates");
 
 // Cache compiled templates for performance
 const templateCache = new Map();
@@ -14,9 +15,8 @@ let partialsRegistered = false;
 async function registerPartialsOnce() {
   if (partialsRegistered) return;
 
-  // Load all *.hbs files in templatesDir as partials too (common pattern)
-  // If you have a dedicated partials folder, point to it instead.
   const files = await fs.readdir(templatesDir);
+
   await Promise.all(
       files
       .filter((f) => f.endsWith(".handlebars"))
@@ -30,7 +30,7 @@ async function registerPartialsOnce() {
   partialsRegistered = true;
 }
 
-export async function renderTemplate(templateName, context) {
+async function renderTemplate(templateName, context) {
   await registerPartialsOnce();
 
   let compiled = templateCache.get(templateName);
@@ -44,3 +44,7 @@ export async function renderTemplate(templateName, context) {
 
   return compiled(context);
 }
+
+module.exports = {
+  renderTemplate,
+};
