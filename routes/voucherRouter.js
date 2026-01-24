@@ -65,7 +65,7 @@ async function processPayment(voucherId, paymentId) {
 
   if (payment.status === 'paid' && !voucher.emailSent) {
     const response = await generateVoucherPdfAndSendMail(voucher);
-    if(response === 'Success'){
+    if(response === 'Success' || response.success){
       voucher.emailSent = true;
       await voucher.save();
     }
@@ -251,7 +251,8 @@ voucherRouter.route('/:voucherId/send-mail')
           return res.status(404).send({error: 'Voucher not found'});
         }
         const response = await generateVoucherPdfAndSendMail(voucher);
-        if (response === 'Success') {
+        console.log(response);
+        if (response === 'Success' || response.success) {
           return res.status(200).send("Success");
         } else {
           return res.status(500).send({error: 'Error'});
@@ -382,7 +383,7 @@ voucherRouter.route('/:voucherId/payment-update')
   process.stdout.write("Processing payment..." + "\n");
   processPayment(voucherId, paymentId).then(
       (response) => {
-        if (response === 'Success') {
+        if (response === 'Success' || response.success) {
           return res.status(200).send("Success");
         } else {
           return res.status(500).send({error: 'Error'});

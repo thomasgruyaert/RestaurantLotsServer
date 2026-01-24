@@ -176,7 +176,8 @@ reservationRouter.route('/:reservationId/approve/:confirmId').options(
     .then((reservation) => {
       sendResApprovalMailClient(reservation.email, reservation)
       .then((response) => {
-        if (response === 'Success') {
+        console.log(response);
+        if (response === 'Success' || response.success) {
           res.status(200).send("Success");
         } else {
           res.status(500).send({error: 'Error'});
@@ -218,7 +219,7 @@ reservationRouter.route('/:reservationId/refuse/:confirmId').options(
     .then((reservation) => {
       sendResRefusalMailClient(reservation.email, req.body.refusalReason)
       .then((response) => {
-        if (response === 'Success') {
+        if (response === 'Success' || response.success) {
           res.status(200).send("Success");
         } else {
           res.status(500).send({error: 'Error'});
@@ -265,7 +266,7 @@ reservationRouter.route('/:reservationId/approve').options(cors.corsWithOptions,
         .then((reservation) => {
           sendResApprovalMailClient(reservation.email, reservation)
           .then((response) => {
-            if (response === 'Success') {
+            if (response === 'Success' || response.success) {
               res.status(200).send("Success");
             } else {
               res.status(500).send({error: 'Error'});
@@ -313,7 +314,7 @@ reservationRouter.route('/:reservationId/refuse').options(cors.corsWithOptions,
         .then((reservation) => {
           sendResRefusalMailClient(reservation.email, req.body.refusalReason)
           .then((response) => {
-            if (response === 'Success') {
+            if (response === 'Success' || response.success) {
               res.status(200).send("Success");
             } else {
               res.status(500).send({error: 'Error'});
