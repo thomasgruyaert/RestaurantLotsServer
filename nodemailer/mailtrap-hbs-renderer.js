@@ -19,9 +19,9 @@ async function registerPartialsOnce() {
   const files = await fs.readdir(templatesDir);
   await Promise.all(
       files
-      .filter((f) => f.endsWith(".hbs"))
+      .filter((f) => f.endsWith(".handlebars"))
       .map(async (file) => {
-        const name = path.basename(file, ".hbs");
+        const name = path.basename(file, ".handlebars");
         const content = await fs.readFile(path.join(templatesDir, file), "utf8");
         Handlebars.registerPartial(name, content);
       })
